@@ -76,5 +76,5 @@ def fabrica_ent_migrate() -> str:
     """Run database migrations for Ent storage backend."""
     return run_fabrica(["ent", "migrate"])
 
-if __name__ == "__main__":
+def main():
     mcp.run()
