@@ -7,11 +7,6 @@ mcp = FastMCP("Fabrica")
 def run_fabrica(args: list[str], cwd: str) -> str:
     """Executes the fabrica CLI and returns the output."""
     safe_cwd = os.path.abspath(os.path.expanduser(cwd))
-    
-    # Init creates the directory, but other commands require it to exist first
-    if not os.path.exists(safe_cwd) and args[0] != "init":
-        return f"Error: The directory {safe_cwd} does not exist. Please provide a valid working_dir."
-
     try:
         result = subprocess.run(
             ["fabrica"] + args, 
@@ -24,70 +19,38 @@ def run_fabrica(args: list[str], cwd: str) -> str:
     except subprocess.CalledProcessError as e:
         return f"Error ({e.returncode}): {e.stderr or e.stdout}"
     except FileNotFoundError:
-        return "Error: 'fabrica' command not found. Ensure it is installed and in your system PATH."
+        return "Error: 'fabrica' command not found. Ensure it is in your system PATH."
 
 @mcp.tool()
 def fabrica_init(
     working_dir: str,
-    project_name: str = ".",
-    auth: bool = False,
-    storage: bool = True,
+    project_name: str = "myproject",
     metrics: bool = False,
-    db: str = "sqlite",
-    storage_type: str = "file",
-    validation_mode: str = "strict"
+    db: str = "sqlite"
 ) -> str:
-    """Initialize a new Fabrica project. 'working_dir' MUST be the absolute path to the parent directory."""
+    """Initialize a new Fabrica project. 'working_dir' must be the absolute path to the parent directory."""
     safe_cwd = os.path.abspath(os.path.expanduser(working_dir))
     project_path = os.path.join(safe_cwd, project_name)
     
-    args = ["init", project_path]
-    if auth: args.append("--auth")
-    if storage: args.append("--storage")
+    # We use the new -d flag to anchor the initialization
+    args = ["init", ".", "-d", project_path]
     if metrics: args.append("--metrics")
-    args.extend([
-        "--db", db,
-        "--storage-type", storage_type,
-        "--validation-mode", validation_mode
-    ])
+    args.extend(["--db", db])
+    
     return run_fabrica(args, cwd=safe_cwd)
 
 @mcp.tool()
-def fabrica_add_resource(working_dir: str, resource_name: str, version: str = "") -> str:
-    """Add a new resource. 'working_dir' MUST be the absolute path to the Fabrica project root."""
-    args = ["add", "resource", resource_name]
-    if version:
-        args.extend(["--version", version])
-    return run_fabrica(args, cwd=working_dir)
+def fabrica_add_resource(working_dir: str, resource_name: str) -> str:
+    """Add a resource. 'working_dir' must be the absolute path to the project root."""
+    return run_fabrica(["add", "resource", resource_name], cwd=working_dir)
 
 @mcp.tool()
-def fabrica_add_version(working_dir: str, version_name: str) -> str:
-    """Add a new API version. 'working_dir' MUST be the absolute path to the Fabrica project root."""
-    args = ["add", "version", version_name]
-    return run_fabrica(args, cwd=working_dir)
-
-@mcp.tool()
-def fabrica_generate(
-    working_dir: str,
-    client: bool = False,
-    openapi: bool = False,
-    handlers: bool = False,
-    storage: bool = False,
-    force: bool = False
-) -> str:
-    """Generate server code and specs. 'working_dir' MUST be the absolute path to the Fabrica project root."""
-    args = ["generate"]
-    if client: args.append("--client")
-    if openapi: args.append("--openapi")
-    if handlers: args.append("--handlers")
-    if storage: args.append("--storage")
-    if force: args.append("--force")
-    return run_fabrica(args, cwd=working_dir)
-
-@mcp.tool()
-def fabrica_ent_migrate(working_dir: str) -> str:
-    """Run database migrations. 'working_dir' MUST be the absolute path to the Fabrica project root."""
-    return run_fabrica(["ent", "migrate"], cwd=working_dir)
+def fabrica_generate(working_dir: str) -> str:
+    """Generate code. 'working_dir' must be the absolute path to the project root."""
+    return run_fabrica(["generate"], cwd=working_dir)
 
 def main():
     mcp.run()
+
+if __name__ == "__main__":
+    main()
