@@ -18,7 +18,7 @@ class InitArgs(BaseModel):
     validation_mode: str = Field(default="strict")
 
 async def run_agent():
-    server_params = StdioServerParameters(command=sys.executable, args=[os.path.abspath("fabrica_mcp.py")])
+    server_params = StdioServerParameters(command="uv", args=["run", "fabrica-mcp"])
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
@@ -34,7 +34,7 @@ async def run_agent():
                 args_schema=InitArgs,
             )
 
-            llm = ChatOllama(model="qwen2.5-coder:7b", base_url="http://127.0.0.1:11435")
+            llm = ChatOllama(model="qwen2.5-coder:7b", base_url="http://127.0.0.1:11434")
             tools = [fabrica_tool]
             
             agent_executor = create_react_agent(llm, tools)
