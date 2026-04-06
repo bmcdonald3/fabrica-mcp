@@ -1,0 +1,20 @@
+# Environments
+.venv/
+env/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Project specific
+/out/
+llm_test_proj/
