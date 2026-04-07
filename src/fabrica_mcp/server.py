@@ -1,6 +1,5 @@
 import os
 import subprocess
-from typing import Optional, List
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("Fabrica")
@@ -40,13 +39,25 @@ def fabrica_init(
 ) -> str:
     """
     Initialize a new Fabrica project.
-    'working_dir' must be the absolute path to the parent directory.
-    'versions' is a comma-separated list of API versions.
+
+    Args:
+        working_dir: Absolute path to the parent directory where the project will be created.
+        project_name: Name of the new project directory.
+        module: Go module path (e.g., github.com/user/project).
+        description: Short project description.
+        auth: Enable authentication with TokenSmith.
+        storage: Enable persistent storage backend.
+        storage_type: Storage backend type: 'file' (simple) or 'ent' (database).
+        db: Database driver for Ent: 'postgres', 'mysql', or 'sqlite'.
+        metrics: Enable Prometheus metrics.
+        validation_mode: Validation strictness: 'strict', 'warn', or 'disabled'.
+        events: Enable CloudEvents support.
+        group: API group name (e.g., infra.example.io).
+        versions: Comma-separated list of API versions (e.g., v1,v1beta1).
     """
     safe_cwd = os.path.abspath(os.path.expanduser(working_dir))
     project_path = os.path.join(safe_cwd, project_name)
     
-    # Using the -d flag added to init.go to anchor initialization
     args = ["init", ".", "-d", project_path]
     if module: args.extend(["--module", module])
     if description: args.extend(["--description", description])
@@ -75,7 +86,16 @@ def fabrica_add_resource(
 ) -> str:
     """
     Add a new resource definition to the project.
-    'working_dir' must be the absolute path to the Fabrica project root.
+
+    Args:
+        working_dir: Absolute path to the Fabrica project root.
+        resource_name: Name of the resource to add (e.g., Device).
+        version: API version (required for versioned projects, e.g., v1alpha1).
+        package: Package name (defaults to lowercase resource name).
+        with_validation: Include validation tags in the generated structs.
+        with_status: Include a Status struct for the resource.
+        with_versioning: Enable per-resource spec versioning snapshots.
+        force: Force adding to non-alpha version.
     """
     args = ["add", "resource", resource_name]
     if version: args.extend(["--version", version])
@@ -89,7 +109,13 @@ def fabrica_add_resource(
 
 @mcp.tool()
 def fabrica_add_version(working_dir: str, version_name: str) -> str:
-    """Add a new API version to the Fabrica project."""
+    """
+    Add a new API version to the Fabrica project.
+
+    Args:
+        working_dir: Absolute path to the Fabrica project root.
+        version_name: Name of the new version (e.g., v1beta1).
+    """
     return run_fabrica(["add", "version", version_name], cwd=working_dir)
 
 @mcp.tool()
@@ -103,8 +129,16 @@ def fabrica_generate(
     debug: bool = False
 ) -> str:
     """
-    Generate code from resource definitions. 
-    If no specific flags are provided, it generates everything.
+    Generate code from resource definitions.
+
+    Args:
+        working_dir: Absolute path to the Fabrica project root.
+        handlers: Generate HTTP handlers only.
+        storage: Generate storage adapters only.
+        client: Generate client code only.
+        openapi: Generate OpenAPI spec only.
+        force: Force regeneration even with version warnings.
+        debug: Enable debug output showing detailed generation steps.
     """
     args = ["generate"]
     if handlers: args.append("--handlers")
@@ -118,14 +152,25 @@ def fabrica_generate(
 
 @mcp.tool()
 def fabrica_ent_migrate(working_dir: str, dry_run: bool = False) -> str:
-    """Run database migrations for Ent storage backend."""
+    """
+    Run database migrations for projects using the Ent storage backend.
+
+    Args:
+        working_dir: Absolute path to the Fabrica project root.
+        dry_run: Show migrations without applying them.
+    """
     args = ["ent", "migrate"]
     if dry_run: args.append("--dry-run")
     return run_fabrica(args, cwd=working_dir)
 
 @mcp.tool()
 def fabrica_ent_describe(working_dir: str) -> str:
-    """Describe the Ent schema and entities."""
+    """
+    Display information about the Ent schema and entities.
+
+    Args:
+        working_dir: Absolute path to the Fabrica project root.
+    """
     return run_fabrica(["ent", "describe"], cwd=working_dir)
 
 def main():
