@@ -23,53 +23,52 @@ def run_fabrica(args: list[str], cwd: str) -> str:
 
 @mcp.tool()
 def fabrica_init(
-    working_dir: str,
-    project_name: str = "myproject",
-    module: str = "",
-    description: str = "",
-    auth: bool = False,
-    storage: bool = True,
-    storage_type: str = "file",
-    db: str = "sqlite",
-    metrics: bool = False,
-    validation_mode: str = "strict",
-    events: bool = False,
-    group: str = "",
-    versions: str = "v1"
+    working_dir: Annotated[str, "Absolute path to the parent directory where the project will be created"],
+    project_name: Annotated[str, "Name of the new project directory"] = "myproject",
+    module: Annotated[str, "Go module path (e.g., github.com/user/project)"] = "",
+    description: Annotated[str, "Short project description"] = "",
+    auth: Annotated[bool, "Enable authentication with TokenSmith"] = False,
+    storage: Annotated[bool, "Enable persistent storage backend"] = True,
+    storage_type: Annotated[str, "Storage backend type: 'file' (simple) or 'ent' (database)"] = "file",
+    db: Annotated[str, "Database driver for Ent: 'postgres', 'mysql', or 'sqlite'"] = "sqlite",
+    metrics: Annotated[bool, "Enable Prometheus metrics"] = False,
+    validation_mode: Annotated[str, "Validation strictness: 'strict', 'warn', or 'disabled'"] = "strict",
+    events: Annotated[bool, "Enable CloudEvents support"] = False,
+    group: Annotated[str, "API group name (e.g., infra.example.io)"] = "",
+    versions: Annotated[str, "Comma-separated list of API versions (e.g., v1,v1beta1)"] = "v1",
+    reconcile: Annotated[bool, "Enable the Kubernetes-style reconciliation framework"] = False,
+    reconcile_workers: Annotated[int, "Number of concurrent reconciler workers"] = 5,
+    reconcile_requeue: Annotated[int, "Default requeue delay in minutes"] = 5
 ) -> str:
     """
-    Initialize a new Fabrica project.
-
-    Args:
-        working_dir: Absolute path to the parent directory where the project will be created.
-        project_name: Name of the new project directory.
-        module: Go module path (e.g., github.com/user/project).
-        description: Short project description.
-        auth: Enable authentication with TokenSmith.
-        storage: Enable persistent storage backend.
-        storage_type: Storage backend type: 'file' (simple) or 'ent' (database).
-        db: Database driver for Ent: 'postgres', 'mysql', or 'sqlite'.
-        metrics: Enable Prometheus metrics.
-        validation_mode: Validation strictness: 'strict', 'warn', or 'disabled'.
-        events: Enable CloudEvents support.
-        group: API group name (e.g., infra.example.io).
-        versions: Comma-separated list of API versions (e.g., v1,v1beta1).
+    Initialize a new Fabrica project with a full set of configuration options.
     """
     safe_cwd = os.path.abspath(os.path.expanduser(working_dir))
     project_path = os.path.join(safe_cwd, project_name)
     
+    # Base command with the anchoring directory flag
     args = ["init", ".", "-d", project_path]
-    if module: args.extend(["--module", module])
-    if description: args.extend(["--description", description])
+    
+    # Feature Flags
     if auth: args.append("--auth")
     if not storage: args.append("--storage=false")
+    if metrics: args.append("--metrics")
+    if events: args.append("--events")
+    if reconcile: args.append("--reconcile")
+    
+    # String/Value Flags
+    if module: args.extend(["--module", module])
+    if description: args.extend(["--description", description])
     if storage_type: args.extend(["--storage-type", storage_type])
     if db: args.extend(["--db", db])
-    if metrics: args.append("--metrics")
     if validation_mode: args.extend(["--validation-mode", validation_mode])
-    if events: args.append("--events")
     if group: args.extend(["--group", group])
     if versions: args.extend(["--versions", versions])
+    
+    # Reconciliation Specifics
+    if reconcile:
+        args.extend(["--reconcile-workers", str(reconcile_workers)])
+        args.extend(["--reconcile-requeue", str(reconcile_requeue)])
     
     return run_fabrica(args, cwd=safe_cwd)
 
