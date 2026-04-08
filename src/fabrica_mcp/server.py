@@ -9,9 +9,11 @@ mcp = FastMCP("Fabrica")
 def run_fabrica(args: list[str], cwd: str) -> str:
     """Executes the fabrica CLI and returns the output."""
     safe_cwd = os.path.abspath(os.path.expanduser(cwd))
+    # Replace with the output of 'which fabrica'
+    FABRICA_BIN = "/Users/ben.mcdonald/go/bin/fabrica"
     try:
         result = subprocess.run(
-            ["fabrica"] + args, 
+            [FABRICA_BIN] + args, 
             capture_output=True, 
             text=True, 
             check=True,
